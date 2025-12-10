@@ -38,8 +38,8 @@ router.post('/generateData', async (req, res, next) => {
             usersInserted: result.insertedUsers.length,
             petsInserted: result.insertedPets.length
         });
-    } catch (err) {
-        next(err);
+    } catch (error) {
+        next(error);
     }
 });
 
