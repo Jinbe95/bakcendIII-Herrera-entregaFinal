@@ -1,74 +1,70 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import mocksRouter from './routers/mocks.router.js';
-import UserModel from './models/user.model.js';
-import PetModel from './models/pet.model.js';
-import adoptionRouter from './routers/adoption.router.js';
+import express from "express";
+import mongoose from "mongoose";
+import session from "express-session";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpecs from "./config/swagger.js";
+import mocksRouter from "./routers/mocks.router.js";
+import usersRouter from "./routers/users.router.js";
+import petsRouter from "./routers/pets.router.js";
+import sessionsRouter from "./routers/sessions.router.js";
+import adoptionRouter from "./routers/adoption.router.js";
 
 const app = express();
+
+// -----------------------------
+// Middlewares
+// -----------------------------
 app.use(express.json());
 
+app.use(
+    session({
+        secret: "coderSecret",
+        resave: false,
+        saveUninitialized: false
+    })
+);
 
-//-----------------------------
-//Montamos router bajo api/mocks
-//-----------------------------
-app.use('/api/mocks', mocksRouter);
+// -----------------------------
+// Routers
+// -----------------------------
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+app.use("/api/mocks", mocksRouter);
+app.use("/api/users", usersRouter);
+app.use("/api/pets", petsRouter);
+app.use("/api/sessions", sessionsRouter);
+app.use("/api/adoptions", adoptionRouter);
 
-app.use('/api/adoptions', adoptionRouter);
-
-
-
-//-----------------------------
-//endpoints de verificacion
-//-----------------------------
-app.get('/api/users', async (req, res, next) => {
-    try {
-        const users = await UserModel.find().limit(100);
-        res.json({ status: 'success', payload: users })
-    } catch (error) {
-        next(error);
-    }
-});
-
-app.get('/api/pets', async (req, res, next) => {
-    try {
-        const pets = await PetModel.find().limit(100);
-        res.json({ status: 'success', payload: pets });
-    } catch (error) {
-        next(error);
-    }
-})
-
-
-//-----------------------------
-//Manejo de errores
-//-----------------------------
-
+// -----------------------------
+// Manejo de errores
+// -----------------------------
 app.use((error, req, res, next) => {
     console.error(error);
-    res.status(500).json({ status: 'error', message: error.message });
+    res.status(500).json({
+        status: "error",
+        message: error.message
+    });
 });
 
-
-//-----------------------------
+// -----------------------------
 // Conexion a Mongo
-//-----------------------------
-const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/mi_basedatos';
+// -----------------------------
+const MONGO_URL =
+    process.env.MONGO_URL || "mongodb://localhost:27017/mi_basedatos";
 const PORT = process.env.PORT || 3000;
 
-mongoose.connect(MONGO_URL)
+mongoose
+    .connect(MONGO_URL)
     .then(() => {
-        console.log('Mongo conectado');
+        console.log("Mongo conectado");
 
-        // Solo iniciar servidor si este archivo es ejecutado directamente
-        if (process.env.NODE_ENV !== 'test') {
+        if (process.env.NODE_ENV !== "test") {
             app.listen(PORT, () =>
                 console.log(`Server escuchando en http://localhost:${PORT}`)
             );
         }
     })
-    .catch(error => {
-        console.error('Error conectando a Mongo:', error);
+    .catch((error) => {
+        console.error("Error conectando a Mongo:", error);
     });
 
 export default app;
